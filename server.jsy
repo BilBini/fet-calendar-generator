@@ -1,0 +1,50 @@
+// server.js
+// Combined Next.js + Express + Sequelize server
+
+require('dotenv').config();
+
+const express = require('express');
+const next = require('next');
+const cors = require('cors');
+const helmet = require('helmet');
+
+// Detect dev mode vs. production
+const dev = process.env.NODE_ENV !== 'production';
+// Initialize Next app
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
+
+nextApp.prepare().then(() => {
+  const app = express();
+  const PORT = process.env.PORT || 4000; // default to 4000 if not in .env
+
+  // Middlewares
+  app.use(cors());
+  app.use(helmet());
+  app.use(express.json());
+
+  // Import your routes
+  // Make sure these files exist in ./routes/
+  const authRoutes = require('./routes/auth');
+  const classesRoutes = require('./routes/classes');
+  const timetablesRoutes = require('./routes/timetables');
+  const departmentRoutes = require('./routes/departments'); // <-- Newly added line
+
+  // Mount routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/classes', classesRoutes);
+  app.use('/api/timetables', timetablesRoutes);
+  app.use('/api/departments', departmentRoutes); // <-- Newly added line
+
+  // Handle Next.js for all other routes
+  app.all('*', (req, res) => {
+    return handle(req, res);
+  });
+
+  // Start listening
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}).catch((err) => {
+  console.error('Next.js server failed to start:', err);
+});
